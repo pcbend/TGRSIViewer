@@ -1,5 +1,8 @@
 
 
+
+#include "Globals.h"
+
 #include <TGRSIViewer.h>
 
 #include <TChainElement.h>
@@ -9,13 +12,18 @@
 #include <TBranch.h>
 #include <TLeaf.h>
 #include <TKey.h>
+#include <TH1.h>
+#include <TH2.h>
 #include <TString.h>
 #include <TObjString.h>
 #include <TGFileDialog.h>
 #include <TGFrame.h>
 #include <TGMenu.h>
-#include <WidgetMessageTypes.h>
 #include <TApplication.h>
+
+#include <KeySymbols.h>
+#include <GuiTypes.h>
+#include <WidgetMessageTypes.h>
 
 
 ClassImp(TGRSIViewer)
@@ -128,10 +136,25 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
    fTreeItemOdb      = fListTree->AddItem(fTreeItemGRSI,"odb");
    fTreeItemCuts     = fListTree->AddItem(fTreeItemGRSI,"cuts");
 
-
-
    fListTree->OpenItem(fTreeItemGRSI);
-   fListTree->Associate(this);
+   fListTree->Associate(this);  //this allows Process Message to work.
+
+   fListTree->Connect("Clicked(TGListTreeItem*,Int_t,Int_t,Int_t)",
+                      "TGRSIViewer",this,
+                      "HandleListTreeClicked(TGListTreeItem*,Int_t,Int_t,Int_t)");
+
+   fListTree->Connect("DoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t)",
+                      "TGRSIViewer",this,
+                      "HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t)");
+
+   fListTree->Connect("KeyPressed(TGListTreeItem*,UInt_t,UInt_t)",
+                      "TGRSIViewer",this,
+                      "HandleListTreeKeyPressed(TGListTreeItem*,UInt_t,UInt_t)"); 
+
+   fListTree->Connect("ReturnPressed(TGListTreeItem*)",
+                      "TGRSIViewer",this,
+                      "HandleListTreeReturnPressed(TGListTreeItem*)");
+
 
 
 
@@ -153,6 +176,8 @@ bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
    switch(GET_MSG(msg)) {
       case kC_LISTTREE:
          printf("\t\t\tList Tree action.\n");
+         
+
          break;
       case kC_COMMAND:
          printf("\t\t\tCommand action.\n");
@@ -178,29 +203,6 @@ bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
    return true;
 };
 
-bool TGRSIViewer::HandleButtonClick(Long_t parm1, Long_t parm2) {
-   printf("\t\t\t\tButton action.\n");
-   switch(parm1) {
-      case B_LOAD:
-         printf("\t\t\t\tLoad!\n");
-         StartLoadFileDialog();
-         break;
-      case B_TWO:
-         printf("\t\t\t\tTwo!\n");
-         break;
-      case B_EXIT:
-         printf("\t\t\t\tExit!\n");
-         CloseViewer();
-         break;
-      case B_DRAW:
-         printf("\t\t\t\tDraw!\n");
-         MakeNewCanvas();
-         break;
-      deafualt:
-         break;
-   };
-   return true;
-}
 
 
 TCanvas *TGRSIViewer::MakeNewCanvas(const char* title) {
@@ -216,7 +218,15 @@ TCanvas *TGRSIViewer::MakeNewCanvas(const char* title) {
    printf("Canvas made with uui of %u\n",uui);
    canvas->SetUniqueID(uui);
    fGRSICanvasMap.insert(std::make_pair(uui,canvas));
+
    canvas->Connect("Closed()","TGRSIViewer",this,"GRSICanvasClosed()");
+   canvas->Connect("Selected(TPad*,TObject*,Int_t)",
+                   "TGRSIViewer",this,
+                   "GRSICanvasSelected(TPad*,TObject*,Int_t)");
+   canvas->Connect("ProcessEvent(Int_t,Int_t,Int_t,TObject*)",
+                   "TGRSIViewer",this,
+                   "GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*)");
+
 
    fCurrentCanvas = canvas;
 
@@ -247,7 +257,7 @@ void TGRSIViewer::GRSICanvasClosed() {
 void TGRSIViewer::StartLoadFileDialog() {
    TGFileInfo fileinfo;
    fileinfo.fFilename = 0;
-   const char *fileTypes[] ={"FragmentTree files","fragment*root",
+   const char *fileTypes[] ={"FragmentTree files","fragment*.root",
                              "AnalysisTree files","analysis*.root",
                              "Calibration files","*.cal",
                              "XML ODB files","*.xml",
@@ -411,8 +421,8 @@ void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {
 void *TGRSIViewer::AddBranchToListTree(TBranch *branch,TGListTreeItem *parent) {
    int Nentries = branch->GetListOfBranches()->GetEntries();
    if(Nentries==0) {
-      printf("branch->GetListOfLeaves()->GetEntries() = %i\n",
-              branch->GetListOfLeaves()->GetEntries());
+      //printf("branch->GetListOfLeaves()->GetEntries() = %i\n",
+      //        branch->GetListOfLeaves()->GetEntries());
       TLeaf *leaf = (TLeaf*)branch->GetListOfLeaves()->At(0);//(TLeaf*)branch;
       AddToListTree(leaf->GetName(),parent,leaf);
    } else {
@@ -460,15 +470,112 @@ TGListTreeItem *TGRSIViewer::AddToListTree(const char *name,TGListTreeItem *pare
 
 
 
+bool TGRSIViewer::HandleButtonClick(Long_t parm1, Long_t parm2) {
+   printf("\t\t\t\tButton action.\n");
+   switch(parm1) {
+      case B_LOAD:
+         printf("\t\t\t\tLoad!\n");
+         StartLoadFileDialog();
+         break;
+      case B_TWO:
+         printf("\t\t\t\tTwo!\n");
+         break;
+      case B_EXIT:
+         printf("\t\t\t\tExit!\n");
+         CloseViewer();
+         break;
+      case B_DRAW:
+         printf("\t\t\t\tDraw!\n");
+         MakeNewCanvas();
+         break;
+      deafualt:
+         break;
+   };
+   return true;
+}
+
+void TGRSIViewer::HandleListTreeClicked(TGListTreeItem *entry,Int_t btn ,Int_t x ,Int_t y) {
+   //printf("entry->GetText(): %s\n",entry->GetText());
+   //printf("((TObject*)entry->GetUserData())->GetName(): %s\n",((TObject*)entry->GetUserData())->GetName());
+   
+   return;
+}
+
+void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,Int_t x,Int_t y) {
+/*
+
+   printf(DBLUE "entry->GetText(): %s" RESET_COLOR "\n",entry->GetText());
+   printf(DBLUE "((TObject*)entry->GetUserData())->GetName(): %s" RESET_COLOR "\n",((TObject*)entry->GetUserData())->GetName());
+   
+   TObject *obj = (TObject*)entry->GetUserData();
+
+   if(!obj)
+      return;
+
+   //TCanvas *c;
+   //if(!fCurrentCanvas)
+   //   c = MakeNewCanvas();
+   //else 
+   //   c = fCurrentCanvas;
+
+   if(obj->InheritsFrom("TLeaf")) {
+      TGListTreeItem *item = entry->GetParent();
+      if(!item)
+         return;
+      while(!((TObject*)item->GetUserData())->InheritsFrom("TTree")) {
+         item = item->GetParent();
+         if(!item)
+            return;   
+      }
+
+   printf(DRED "item->GetText(): %s" RESET_COLOR "\n",item->GetText());
+   printf(DRED "((TObject*)item->GetUserData())->GetName(): %s" RESET_COLOR "\n",((TObject*)item->GetUserData())->GetName());
+
+      TObject *parent_obj = (TObject*)item->GetUserData();
+
+      TCanvas *c = MakeNewCanvas();
+      c->cd();
+      if(parent_obj->InheritsFrom("TChain")) {
+        TChain *chain = (TChain*)parent_obj;       
+        chain->Draw(Form("%s>>hist(16000,0,16000)",obj->GetName()),
+                    Form("%s>0",obj->GetName()),
+                    Form("goff"));
+        TH1F *hist = ((TH1F*)gDirectory->FindObjectAny("hist"));
+        hist = (TH1F*) hist->Clone(hist->GetTitle());
+        hist->Draw();
+      } else if (parent_obj->InheritsFrom("TTree")) {
+        TTree *tree = (TTree*)parent_obj;       
+
+      }
+   }
+*/
+
+   return;
+}
 
 
+void TGRSIViewer::HandleListTreeKeyPressed(TGListTreeItem *entry,UInt_t keysym,UInt_t mask) {
+   printf(DYELLOW "keysym = %i  |  mask = 0x%08x" RESET_COLOR "\n",keysym,mask);
+
+   return;
+}
+
+void TGRSIViewer::HandleListTreeReturnPressed(TGListTreeItem *entry) {
+   printf(DYELLOW "return key pressed" RESET_COLOR "\n");
+   return;
+}
 
 
+void TGRSIViewer::GRSICanvasSelected(TPad *selpad, TObject *selected, Int_t event) {
+
+   return;
+}
 
 
+void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *selected) {
 
-
-
+   return;
+}
 
 
 

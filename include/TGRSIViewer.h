@@ -89,9 +89,13 @@ class TGRSIViewer : public TGMainFrame {
 
    public:    //slots
       void GRSICanvasClosed();
-      
+      void GRSICanvasSelected(TPad*,TObject*,Int_t);
+      void GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*);
 
-
+      void HandleListTreeClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
+      void HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
+      void HandleListTreeKeyPressed(TGListTreeItem*,UInt_t,UInt_t);
+      void HandleListTreeReturnPressed(TGListTreeItem*);
 
    ClassDef(TGRSIViewer,0)
 };
