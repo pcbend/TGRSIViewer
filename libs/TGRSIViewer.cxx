@@ -24,7 +24,6 @@
 #include <KeySymbols.h>
 #include <GuiTypes.h>
 #include <WidgetMessageTypes.h>
-#include <ExtraWidgetMessageTypes.h>
 
 
 ClassImp(TGRSIViewer)
@@ -177,9 +176,9 @@ bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
    switch(GET_MSG(msg)) {
       case kC_LISTTREE:
          printf("\t\t\tList Tree action.\n");
-         printf(DYELLOW "\t\t\tsubmsg: %i" RESET_COLOR "\n",GET_SUBMSG(msg));
          switch(GET_SUBMSG(msg)) {
-            case kLT_BUTTON:
+            case kCT_KEY:
+               printf(DYELLOW "\t\t\tsubmsg: %i" RESET_COLOR "\n",GET_SUBMSG(msg));
                break;
          };
          break;
