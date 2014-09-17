@@ -29,6 +29,7 @@
 ClassImp(TGRSIViewer)
 
 GRSICanvasMap TGRSIViewer::fGRSICanvasMap;
+TGRSIHistManager *TGRSIViewer::fGRSIHistManager = new TGRSIHistManager;
 
 TCanvas *TGRSIViewer::fCurrentCanvas = 0;
 TChain  *TGRSIViewer::fFragmentChain = 0;
@@ -129,15 +130,20 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
    
    fListTree->AddItem(0,"/grsi");
    TGListTreeItem *fTreeItemGRSI = fListTree->GetFirstItem();
-   
+   fListTree->SetUserControl(true);
+
    fTreeItemFragment = fListTree->AddItem(fTreeItemGRSI,"fragment");
    fTreeItemAnalysis = fListTree->AddItem(fTreeItemGRSI,"analysis");
    fTreeItemCal      = fListTree->AddItem(fTreeItemGRSI,"cal");
    fTreeItemOdb      = fListTree->AddItem(fTreeItemGRSI,"odb");
    fTreeItemCuts     = fListTree->AddItem(fTreeItemGRSI,"cuts");
 
+
    fListTree->OpenItem(fTreeItemGRSI);
    fListTree->Associate(this);  //this allows Process Message to work.
+
+
+
 
    fListTree->Connect("Clicked(TGListTreeItem*,Int_t,Int_t,Int_t)",
                       "TGRSIViewer",this,
@@ -147,15 +153,13 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
                       "TGRSIViewer",this,
                       "HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t)");
 
-   fListTree->Connect("KeyPressed(TGListTreeItem*,UInt_t,UInt_t)",
+   fListTree->Connect("KeyPressed(TGListTreeItem*,ULong_t,ULong_t)",
                       "TGRSIViewer",this,
-                      "HandleListTreeKeyPressed(TGListTreeItem*,UInt_t,UInt_t)"); 
+                      "HandleListTreeKeyPressed(TGListTreeItem*,ULong_t,ULong_t)"); 
 
-   fListTree->Connect("ReturnPressed(TGListTreeItem*)",
-                      "TGRSIViewer",this,
-                      "HandleListTreeReturnPressed(TGListTreeItem*)");
-
-
+   //fListTree->Connect("ReturnPressed(TGListTreeItem*)",
+   //                   "TGRSIViewer",this,
+   //                   "HandleListTreeReturnPressed(TGListTreeItem*)");
 
 
    return;
@@ -370,7 +374,8 @@ void TGRSIViewer::AddFragmentTree(TFile *infile, TTree *tree) {
 
 
    fListTree->OpenItem(fTreeItemFragment);
-
+   fListTree->HighlightItem(fTreeItemFragment);
+   return;
 }
 
 void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {  
@@ -414,10 +419,10 @@ void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {
 
 
    fListTree->OpenItem(fTreeItemAnalysis);
+   fListTree->HighlightItem(fTreeItemAnalysis);
 
 
-
-
+   return;
 }
 
 
@@ -557,9 +562,33 @@ void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,In
 }
 
 
-void TGRSIViewer::HandleListTreeKeyPressed(TGListTreeItem *entry,UInt_t keysym,UInt_t mask) {
+void TGRSIViewer::HandleListTreeKeyPressed(TGListTreeItem *entry,ULong_t keysym,ULong_t mask) {
    printf(DYELLOW "keysym = %i  |  mask = 0x%08x" RESET_COLOR "\n",keysym,mask);
-
+   switch(keysym) {
+      case kKey_Return:
+         HandleListTreeReturnPressed(entry);
+         break;
+      case kKey_Space:
+         fListTree->SetEventHandled(true);
+         printf("SPACE!\n");
+         fListTree->HighlightItem(entry);
+         if(entry->IsOpen()){printf("opened -> close\n"); fListTree->CloseItem(entry); }
+         else               {printf("closed -> open \n"); fListTree->OpenItem(entry);  }
+         break;
+      case kKey_Up:
+         fListTree->SetEventHandled(true);
+         fListTree->LineUp(true);
+         entry = fListTree->GetCurrent();
+         fListTree->HighlightItem(entry);
+         break;
+      case kKey_Down:
+         fListTree->SetEventHandled(true);
+         fListTree->LineDown(true);
+         entry = fListTree->GetCurrent();
+         fListTree->HighlightItem(entry);
+         break;
+   };
+   //gClient->NeedRedraw(this);
    return;
 }
 

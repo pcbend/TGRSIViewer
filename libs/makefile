@@ -1,5 +1,5 @@
 
-OBJECTS = TGRSIViewer.o TGRSIViewerDict.o 
+OBJECTS = TGRSIViewer.o TGRSIViewerDict.o TGRSIHistManager.o TGRSIHistManagerDict.o 
 
 CFLAGS += -fPIC
 

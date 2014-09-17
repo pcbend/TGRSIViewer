@@ -12,6 +12,7 @@
 #include "TGListTree.h"
 #include "TGStatusBar.h"
 
+#include "TGRSIHistManager.h"
 
 typedef std::map<unsigned int,TCanvas *> GRSICanvasMap;
 
@@ -21,6 +22,7 @@ class TGRSIViewer : public TGMainFrame {
       TGRSIViewer(const TGWindow *p=0,UInt_t w=800,UInt_t h=800);
       virtual ~TGRSIViewer();
 
+      static TGRSIHistManager *GetHistManager() { return fGRSIHistManager; }
 
    protected:
       enum EMunuCommands { 
@@ -70,6 +72,7 @@ class TGRSIViewer : public TGMainFrame {
       static TChain  *fFragmentChain;
       static TChain  *fAnalysisChain;
 
+      static TGRSIHistManager *fGRSIHistManager;
 
    private:
       //static unsigned int gCanvasNumber;
@@ -94,7 +97,7 @@ class TGRSIViewer : public TGMainFrame {
 
       void HandleListTreeClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
       void HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
-      void HandleListTreeKeyPressed(TGListTreeItem*,UInt_t,UInt_t);
+      void HandleListTreeKeyPressed(TGListTreeItem*,ULong_t,ULong_t);
       void HandleListTreeReturnPressed(TGListTreeItem*);
 
    ClassDef(TGRSIViewer,0)

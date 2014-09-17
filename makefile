@@ -43,7 +43,7 @@ MAKE=make --no-print-directory
 
 .PHONY: all subdirs $(ALLDIRS) clean
 
-all: print subdirs bin grsiview
+all: clean print subdirs bin grsiview
 
 print:
 	@echo "Compiling on $(PLATFORM)"
