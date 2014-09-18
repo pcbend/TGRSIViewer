@@ -6,6 +6,7 @@
 #include <TCanvas.h>
 #include <TChain.h>
 #include <TTree.h>
+#include <TFolder.h>
 
 #include "TGFrame.h"
 #include "TGButton.h"
@@ -84,9 +85,14 @@ class TGRSIViewer : public TGMainFrame {
       void OpenRootFile(const char*);
       void AddFragmentTree(TFile*,TTree*);
       void AddAnalysisTree(TFile*,TTree*);
+      void AddTFolder(TFolder*,TGListTreeItem*);
+      void AddTDirectory(TDirectory*,TGListTreeItem*);
 
       TGListTreeItem *AddToListTree(const char *name,TGListTreeItem *parent=0, TObject *object=0);
-      void  *AddBranchToListTree(TBranch *branch,TGListTreeItem *parent=0);
+      void AddBranchToListTree(TBranch *branch,TGListTreeItem *parent=0);
+
+      std::map <TGListTreeItem*,TGRSIHistManager*> fHistMap;
+      TGRSIHistManager *GetHistManager(TGListTreeItem*);
 
       void CloseViewer(Option_t *opt ="");
 

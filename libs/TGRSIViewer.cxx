@@ -140,7 +140,7 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
 
 
    fListTree->OpenItem(fTreeItemGRSI);
-   fListTree->Associate(this);  //this allows Process Message to work.
+   //fListTree->Associate(this);  //this allows Process Message to work.
 
 
 
@@ -164,6 +164,24 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
 
    return;
 }
+
+
+
+TGRSIHistManager *TGRSIViewer::GetHistManager(TGListTreeItem *item) {
+   TGRSIHistManager *ghm = 0;
+   if(!item)
+      return ghm;
+   if(fHistMap.count(item) == 0) {
+      ghm = new TGRSIHistManager();
+      fHistMap.insert(std::make_pair(item,ghm));
+   }
+   else
+      ghm = fHistMap.at(item);
+   return ghm;   
+}
+
+
+
 
 bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
 
@@ -264,11 +282,13 @@ void TGRSIViewer::GRSICanvasClosed() {
 void TGRSIViewer::StartLoadFileDialog() {
    TGFileInfo fileinfo;
    fileinfo.fFilename = 0;
-   const char *fileTypes[] ={"FragmentTree files","fragment*.root",
+   const char *fileTypes[] ={
+      
+                             "All Root files","*.root",
+                             "FragmentTree files","fragment*.root",
                              "AnalysisTree files","analysis*.root",
                              "Calibration files","*.cal",
                              "XML ODB files","*.xml",
-                              "All Root files","*.root",
                              "Any","*",0,0};
    fileinfo.fFileTypes= fileTypes;
    fileinfo.SetMultipleSelection(true);
@@ -316,20 +336,71 @@ void TGRSIViewer::OpenRootFile(const char *file) {
    if(end != std::string::npos) 
       name = name.substr(end+1,name.length()-end-1);
 
+   bool treefile = false;
    while(TKey *key = (TKey*)iter()) {
       if(strcmp((key)->GetClassName(),"TTree")==0) {
          TTree *tree = (TTree*)key->ReadObj();
-         if(strcmp(tree->GetName(),"FragmentTree")==0)
+         if(strcmp(tree->GetName(),"FragmentTree")==0) {
+            treefile = true;
             AddFragmentTree(infile,tree);
-         else if(strcmp(tree->GetName(),"AnalysisTree")==0)
+         }
+         else if(strcmp(tree->GetName(),"AnalysisTree")==0) {
+            treefile = true;
             AddAnalysisTree(infile,tree);
+         }
       }
-
    }
+   
+   if(treefile)
+      return;
+   if(fListTree->FindItemByPathname(Form("/%s",name.c_str()))) {
+      printf("file alreadyed added.\n");
+      return;
+   }
+   TGListTreeItem *parent = AddToListTree(name.c_str(),0,infile);
+   iter.Reset();
+   while(TKey *key = (TKey*)iter()) {
+      printf("key->GetClassName() = %s\n\n",key->GetClassName());
+      if(strcmp(key->GetClassName(),"TFolder")==0) {
+         AddTFolder((TFolder*)key->ReadObj(),parent);
+      }
+      else if(strcmp(key->GetClassName(),"TDirectoryFile")==0) {
+         AddTDirectory((TDirectory*)key->ReadObj(),parent);
+      } else {
+         TObject *obj = (TObject*)key->ReadObj();
+         AddToListTree(obj->GetName(),parent,obj);
+      }
+   }
+
 
    return;
 }
 
+void TGRSIViewer::AddTFolder(TFolder *folder, TGListTreeItem *parent) {
+   TIter iter(folder->GetListOfFolders());
+   while(TObject *obj = (TObject*)iter()) {
+      TGListTreeItem *item = AddToListTree(obj->GetName(),parent,obj);
+      if(strcmp(obj->IsA()->GetName(),"TFolder")==0) 
+         AddTFolder((TFolder*)obj,item);
+      else if(obj->InheritsFrom("TDirectory"))
+         AddTDirectory((TDirectory*)obj,item);
+      } 
+}
+
+void TGRSIViewer::AddTDirectory(TDirectory *directory, TGListTreeItem *parent) {
+   TGListTreeItem *item = AddToListTree(directory->GetName(),parent,directory);
+   TIter iter(directory->GetListOfKeys());
+   //printf("directory->GetListOfKeys()->GetSize() = %i\n",directory->GetListOfKeys()->GetSize());
+   while(TKey *key = (TKey*)iter()) {
+      TObject *obj = (TObject*)key->ReadObj();
+      if(obj->InheritsFrom("TDirectory"))
+         AddTDirectory((TDirectory*)obj,item);
+      else if(strcmp(obj->IsA()->GetName(),"TFolder")==0)
+         AddTFolder((TFolder*)obj,item);
+      else
+         AddToListTree(obj->GetName(),item,obj);
+   }
+}
 
 void TGRSIViewer::AddFragmentTree(TFile *infile, TTree *tree) {  
    bool InitChain = false;
@@ -370,16 +441,15 @@ void TGRSIViewer::AddFragmentTree(TFile *infile, TTree *tree) {
                              fListTree->FindChildByName(fTreeItemFragment,"FragmentChain"));
       }   
    }
-   
-
-
    fListTree->OpenItem(fTreeItemFragment);
    fListTree->HighlightItem(fTreeItemFragment);
    return;
 }
 
-void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {  
 
+
+
+void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {  
    bool InitChain = false;
    if(!fAnalysisChain) {
       fAnalysisChain = new TChain("AnalysisTree");
@@ -416,17 +486,13 @@ void TGRSIViewer::AddAnalysisTree(TFile *infile, TTree *tree) {
       }   
    }
    
-
-
    fListTree->OpenItem(fTreeItemAnalysis);
    fListTree->HighlightItem(fTreeItemAnalysis);
-
-
    return;
 }
 
 
-void *TGRSIViewer::AddBranchToListTree(TBranch *branch,TGListTreeItem *parent) {
+void TGRSIViewer::AddBranchToListTree(TBranch *branch,TGListTreeItem *parent) {
    int Nentries = branch->GetListOfBranches()->GetEntries();
    if(Nentries==0) {
       //printf("branch->GetListOfLeaves()->GetEntries() = %i\n",
@@ -467,14 +533,41 @@ TGListTreeItem *TGRSIViewer::AddToListTree(const char *name,TGListTreeItem *pare
    } else if(object->InheritsFrom("TBranch")) {
       pic1.assign("branch_t.xpm");
       pic2 = pic1;
-   }
+   } else if(object->InheritsFrom("TFile")) {
+      pic1.assign("rootdb_t.xpm");
+      pic2 = pic1;
+   //} else if(object->InheritsFrom("TDirectoryFile")) {
+   } else if(object->InheritsFrom("TH2")) {
+      pic1.assign("h2_t.xpm");
+      pic2 = pic1;  
+      TGRSIHistManager *ghm = GetHistManager(parent);
+      ghm->InsertHist(object);
+   } else if(object->InheritsFrom("TH1")) {
+      pic1.assign("h1_t.xpm");
+      pic2 = pic1;  
+      TGRSIHistManager *ghm = GetHistManager(parent);
+      ghm->InsertHist(object);
+   } 
+
+   
+
 
    TGListTreeItem *item = fListTree->AddItem(parent,name,(void*)object,
-                                             gClient->GetPicture(pic1.c_str()),
-                                             gClient->GetPicture(pic2.c_str()),checked);
+                                             gClient->GetPicture(pic2.c_str()),
+                                             gClient->GetPicture(pic1.c_str()),checked);
    
    return item;
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -506,10 +599,17 @@ void TGRSIViewer::HandleListTreeClicked(TGListTreeItem *entry,Int_t btn ,Int_t x
    //printf("entry->GetText(): %s\n",entry->GetText());
    //printf("((TObject*)entry->GetUserData())->GetName(): %s\n",((TObject*)entry->GetUserData())->GetName());
    
+   fListTree->HighlightItem(entry);
    return;
 }
 
 void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,Int_t x,Int_t y) {
+   //return;
+
+   printf("entry->GetText() = %s\n", entry->GetText());
+
+
+
 /*
 
    printf(DBLUE "entry->GetText(): %s" RESET_COLOR "\n",entry->GetText());
@@ -566,11 +666,14 @@ void TGRSIViewer::HandleListTreeKeyPressed(TGListTreeItem *entry,ULong_t keysym,
    printf(DYELLOW "keysym = %i  |  mask = 0x%08x" RESET_COLOR "\n",keysym,mask);
    switch(keysym) {
       case kKey_Return:
-         HandleListTreeReturnPressed(entry);
+         fListTree->SetEventHandled(true);
+         fListTree->HighlightItem(entry);
+         if(entry->IsOpen()){printf("opened -> close\n"); fListTree->CloseItem(entry); }
+         else               {printf("closed -> open \n"); fListTree->OpenItem(entry);  }
+         //HandleListTreeDoubleClicked(entry,0,0,0);
          break;
       case kKey_Space:
          fListTree->SetEventHandled(true);
-         printf("SPACE!\n");
          fListTree->HighlightItem(entry);
          if(entry->IsOpen()){printf("opened -> close\n"); fListTree->CloseItem(entry); }
          else               {printf("closed -> open \n"); fListTree->OpenItem(entry);  }
