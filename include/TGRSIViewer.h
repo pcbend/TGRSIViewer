@@ -12,6 +12,7 @@
 #include "TGButton.h"
 #include "TGListTree.h"
 #include "TGStatusBar.h"
+#include "TGListView.h"
 
 #include "TGRSIHistManager.h"
 
@@ -51,6 +52,7 @@ class TGRSIViewer : public TGMainFrame {
       void LayoutMenuBar();
       void LayoutGUI();
       void SetupListTree(TGCanvas*);
+      void SetupListView(TGCanvas*);
 
       TGStatusBar *fStatusBar;
 
@@ -60,6 +62,7 @@ class TGRSIViewer : public TGMainFrame {
       TGTextButton *fTextButton_Draw;
 
       TGListTree     *fListTree;
+      TGListView     *fListView;
 
       TGListTreeItem *fTreeItemRoot;
       TGListTreeItem *fTreeItemGRSI;
@@ -93,6 +96,8 @@ class TGRSIViewer : public TGMainFrame {
 
       std::map <TGListTreeItem*,TGRSIHistManager*> fHistMap;
       TGRSIHistManager *GetHistManager(TGListTreeItem*);
+
+      void DrawHist(TGListTreeItem*);
 
       void CloseViewer(Option_t *opt ="");
 

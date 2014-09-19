@@ -85,7 +85,10 @@ void TGRSIViewer::LayoutGUI()       {
    TGLayoutHints* frameLayout_x = new TGLayoutHints( kLHintsTop|kLHintsExpandX, 0, 0, 0, 0 );
    TGLayoutHints* frameLayout_y = new TGLayoutHints( kLHintsTop|kLHintsExpandY, 0, 0, 0, 0 );
 
-   TGVerticalFrame   *vFrame      = new TGVerticalFrame(this,10,10);
+   TGHorizontalFrame *hFrame      = new TGHorizontalFrame(this,10,10);
+
+   /*************************************************/
+   TGVerticalFrame   *vFrame      = new TGVerticalFrame(hFrame,10,10);
    TGHorizontalFrame *buttonFrame = new TGHorizontalFrame(vFrame,10,10);
    TGLayoutHints* buttonLayout    = new TGLayoutHints(kLHintsCenterX,2,2,2,2);
 
@@ -114,8 +117,19 @@ void TGRSIViewer::LayoutGUI()       {
 
    vFrame->AddFrame(buttonFrame,frameLayout_x);
    vFrame->AddFrame(canvas,frameLayout_all);
-   
-   this->AddFrame(vFrame,frameLayout_all);   
+   /*************************************************/
+
+   TGVerticalFrame *vLVFrame   = new TGVerticalFrame(hFrame,10,10,kSunkenFrame,TGFrame::GetWhitePixel());
+   //TGCanvas *fLVcanvas = new TGCanvas(vLVFrame,340,300);
+   //SetupListView(fLVcanvas);
+   fListView = new TGListView(vLVFrame,340,300);
+   vLVFrame->AddFrame(fListView,frameLayout_all);
+
+
+   hFrame->AddFrame(vFrame,frameLayout_all);
+   hFrame->AddFrame(vLVFrame,frameLayout_all);
+
+   this->AddFrame(hFrame,frameLayout_all);   
 
    TGLayoutHints* statusBarLayout = new TGLayoutHints( kLHintsBottom|kLHintsLeft|kLHintsExpandX,0, 0, 2, 0 );
    fStatusBar = new TGStatusBar( this, 50, 10, kHorizontalFrame );
@@ -138,12 +152,8 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
    fTreeItemOdb      = fListTree->AddItem(fTreeItemGRSI,"odb");
    fTreeItemCuts     = fListTree->AddItem(fTreeItemGRSI,"cuts");
 
-
    fListTree->OpenItem(fTreeItemGRSI);
    //fListTree->Associate(this);  //this allows Process Message to work.
-
-
-
 
    fListTree->Connect("Clicked(TGListTreeItem*,Int_t,Int_t,Int_t)",
                       "TGRSIViewer",this,
@@ -160,11 +170,20 @@ void TGRSIViewer::SetupListTree(TGCanvas *canvas) {
    //fListTree->Connect("ReturnPressed(TGListTreeItem*)",
    //                   "TGRSIViewer",this,
    //                   "HandleListTreeReturnPressed(TGListTreeItem*)");
+   return;
+}
+
+
+
+void TGRSIViewer::SetupListView(TGCanvas *canvas) {
+   //fListView = new TGListView(canvas,kHorizontalFrame);
+
+
+
 
 
    return;
 }
-
 
 
 TGRSIHistManager *TGRSIViewer::GetHistManager(TGListTreeItem *item) {
@@ -605,10 +624,42 @@ void TGRSIViewer::HandleListTreeClicked(TGListTreeItem *entry,Int_t btn ,Int_t x
 
 void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,Int_t x,Int_t y) {
    //return;
-
    printf("entry->GetText() = %s\n", entry->GetText());
 
+   TObject *object = (TObject*)entry->GetUserData();
+   if(!object )
+      return;
 
+   if(object->InheritsFrom("TH1")) {
+      DrawHist(entry);
+   }
+
+   if(object->InheritsFrom("TLeaf")) {
+      printf("TLEAF found.\n");
+      
+      TGListTreeItem *parent = entry->GetParent();
+      if(!parent)
+         return;
+      TGRSIHistManager *ghm = GetHistManager(entry->GetParent());
+      if(!ghm->FindHistByName(object->GetName())) {
+         while(!((TObject*)parent->GetUserData())->InheritsFrom("TTree")) {
+            parent = parent->GetParent();
+            if(!parent)
+               return;   
+         }
+         TObject *parent_obj = (TObject*)parent->GetUserData();
+         if(parent_obj->InheritsFrom("TChain")) {
+         TChain *chain = (TChain*)parent_obj; 
+         chain->Draw(Form("%s>>%s(64000,0,64000)",object->GetName(),object->GetName()),
+                     Form("%s>0",object->GetName()),
+                     Form("goff"));
+                     TObject *newhist = gDirectory->FindObjectAny(Form("%s",object->GetName()));
+                     printf("FindObjectAny: 0x%08x\n",gDirectory->FindObjectAny(Form("%s",object->GetName())));
+         ghm->InsertHist(newhist);
+        }
+      }
+      DrawHist(entry);
+   }
 
 /*
 
@@ -658,6 +709,20 @@ void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,In
    }
 */
 
+   return;
+}
+
+void TGRSIViewer::DrawHist(TGListTreeItem *entry) {
+   if(!entry)
+      return;
+   TGRSIHistManager *ghm = GetHistManager(entry->GetParent());
+   TObject *object = (TObject*)entry->GetUserData();
+   TH1 *hist = ghm->FindHistByName(object->GetName()); //entry->GetText()??
+   if(!hist)
+      return;
+   TCanvas *c = MakeNewCanvas();
+   c->cd();
+   hist->Draw();
    return;
 }
 
