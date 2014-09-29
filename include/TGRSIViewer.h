@@ -31,6 +31,9 @@ class TGRSIViewer : public TGMainFrame {
          M_FILE_OPEN,
          M_FILE_EXIT,
 
+         M_TOOLS_HAMMER,
+         M_TOOLS_WRENCH,
+
          M_HELP_ABOUT,
          M_HELP_HELP
       };
@@ -102,7 +105,8 @@ class TGRSIViewer : public TGMainFrame {
 
       void CloseViewer(Option_t *opt ="");
 
-   public:    //slots
+  public: //slots
+      void CallCloseViewer();
       void GRSICanvasClosed();
       void GRSICanvasSelected(TPad*,TObject*,Int_t);
       void GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*);

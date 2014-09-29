@@ -42,12 +42,14 @@ TGRSIViewer::TGRSIViewer(const TGWindow *p,UInt_t w,UInt_t h)
 
    SetWindowName("Peter's Shoeshine Emporium");              
 
+   this->Connect("CloseWindow()","TGRSIViewer",this,"CallCloseViewer()");
    LayoutMenuBar();
    LayoutGUI();
    Resize(GetDefaultSize());
    MapSubwindows();
    Layout();
    MapWindow();
+
 
 }
 
@@ -59,7 +61,7 @@ void TGRSIViewer::LayoutMenuBar()   {
    TGPopupMenu *menuFile = new TGPopupMenu(fClient->GetRoot());   
    menuFile->AddEntry("&Open",M_FILE_OPEN);
    menuFile->AddSeparator();
-   menuFile->AddEntry("&Exit",M_FILE_EXIT);
+   menuFile->AddEntry("E&xit",M_FILE_EXIT);
    menuFile->Associate(this);
    //
    TGPopupMenu *menuHelp = new TGPopupMenu(fClient->GetRoot());
@@ -67,6 +69,10 @@ void TGRSIViewer::LayoutMenuBar()   {
    menuHelp->AddEntry("&HELP!",M_HELP_HELP);
    menuHelp->Associate(this);
    //
+   TGPopupMenu *menuTools = new TGPopupMenu(fClient->GetRoot());
+   menuTools->AddEntry("&Hammer",M_TOOLS_HAMMER);
+   menuTools->AddEntry("&Wrench",M_TOOLS_WRENCH);
+   menuTools->Associate(this);
    
    TGLayoutHints* menuBarLayout_all   = new TGLayoutHints( kLHintsNormal|kLHintsExpandX, 0, 0, 0, 10 );
    TGLayoutHints* menuBarLayout_left  = new TGLayoutHints( kLHintsTop|kLHintsLeft , 5, 0, 0, 0 );
@@ -75,6 +81,7 @@ void TGRSIViewer::LayoutMenuBar()   {
    TGMenuBar *menuBar = new TGMenuBar( this, 1, 1, kRaisedFrame );
    menuBar->AddPopup("&File",menuFile,menuBarLayout_left);
    menuBar->AddPopup("&Help",menuFile,menuBarLayout_right);
+   menuBar->AddPopup("&Tools",menuTools,menuBarLayout_left);
 
    this->AddFrame(menuBar,menuBarLayout_all);
 }
@@ -119,15 +126,15 @@ void TGRSIViewer::LayoutGUI()       {
    vFrame->AddFrame(canvas,frameLayout_all);
    /*************************************************/
 
-   TGVerticalFrame *vLVFrame   = new TGVerticalFrame(hFrame,10,10,kSunkenFrame,TGFrame::GetWhitePixel());
+  // TGVerticalFrame *vLVFrame   = new TGVerticalFrame(hFrame,10,10,kSunkenFrame,TGFrame::GetWhitePixel());
    //TGCanvas *fLVcanvas = new TGCanvas(vLVFrame,340,300);
    //SetupListView(fLVcanvas);
-   fListView = new TGListView(vLVFrame,340,300);
-   vLVFrame->AddFrame(fListView,frameLayout_all);
+ //  fListView = new TGListView(vLVFrame,340,300);
+ //  vLVFrame->AddFrame(fListView,frameLayout_all);
 
 
    hFrame->AddFrame(vFrame,frameLayout_all);
-   hFrame->AddFrame(vLVFrame,frameLayout_all);
+ //  hFrame->AddFrame(vLVFrame,frameLayout_all);
 
    this->AddFrame(hFrame,frameLayout_all);   
 
@@ -242,7 +249,7 @@ bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
          break;
       default:
          break;
-   }
+}
 
 
    return true;
@@ -268,7 +275,7 @@ TCanvas *TGRSIViewer::MakeNewCanvas(const char* title) {
    canvas->Connect("Selected(TPad*,TObject*,Int_t)",
                    "TGRSIViewer",this,
                    "GRSICanvasSelected(TPad*,TObject*,Int_t)");
-   canvas->Connect("ProcessEvent(Int_t,Int_t,Int_t,TObject*)",
+   canvas->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)",
                    "TGRSIViewer",this,
                    "GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*)");
 
@@ -533,7 +540,9 @@ void TGRSIViewer::CloseViewer(Option_t *opt) {
    return;
 }
 
-
+void TGRSIViewer::CallCloseViewer(){
+   CloseViewer();
+}
 
 TGListTreeItem *TGRSIViewer::AddToListTree(const char *name,TGListTreeItem *parent,TObject *object) {
 
@@ -776,6 +785,9 @@ void TGRSIViewer::GRSICanvasSelected(TPad *selpad, TObject *selected, Int_t even
 
 
 void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *selected) {
+
+   if(selected)
+   printf("event %d x %d, y%d, selected %s\n", event,x,y, selected->Class()->GetName());
 
    return;
 }
