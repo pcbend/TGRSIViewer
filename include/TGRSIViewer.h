@@ -31,6 +31,9 @@ class TGRSIViewer : public TGMainFrame {
          M_FILE_OPEN,
          M_FILE_EXIT,
 
+         M_TOOLS_HAMMER,
+         M_TOOLS_WRENCH,
+
          M_HELP_ABOUT,
          M_HELP_HELP
       };
@@ -48,6 +51,7 @@ class TGRSIViewer : public TGMainFrame {
 
       bool ProcessMessage(Long_t,Long_t,Long_t);
       bool HandleButtonClick(Long_t,Long_t);
+      bool HandleMenuClick(Long_t,Long_t);
 
       void LayoutMenuBar();
       void LayoutGUI();
@@ -101,7 +105,8 @@ class TGRSIViewer : public TGMainFrame {
 
       void CloseViewer(Option_t *opt ="");
 
-   public:    //slots
+  public: //slots
+      void CallCloseViewer();
       void GRSICanvasClosed();
       void GRSICanvasSelected(TPad*,TObject*,Int_t);
       void GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*);
@@ -110,7 +115,6 @@ class TGRSIViewer : public TGMainFrame {
       void HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
       void HandleListTreeKeyPressed(TGListTreeItem*,ULong_t,ULong_t);
       void HandleListTreeReturnPressed(TGListTreeItem*);
-
    ClassDef(TGRSIViewer,0)
 };
 
