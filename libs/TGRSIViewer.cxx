@@ -59,7 +59,7 @@ void TGRSIViewer::LayoutMenuBar()   {
    TGPopupMenu *menuFile = new TGPopupMenu(fClient->GetRoot());   
    menuFile->AddEntry("&Open",M_FILE_OPEN);
    menuFile->AddSeparator();
-   menuFile->AddEntry("E&xit",M_FILE_EXIT);
+   menuFile->AddEntry("&Exit",M_FILE_EXIT);
    menuFile->Associate(this);
    //
    TGPopupMenu *menuHelp = new TGPopupMenu(fClient->GetRoot());
@@ -234,6 +234,7 @@ bool TGRSIViewer::ProcessMessage(Long_t msg, Long_t parm1, Long_t parm2) {
                break;
             case kCM_MENU:
                printf("\t\t\t\tMenu item selected.\n");
+               HandleMenuClick(parm1,parm2);
                break;
             default:
                break;
@@ -579,16 +580,18 @@ TGListTreeItem *TGRSIViewer::AddToListTree(const char *name,TGListTreeItem *pare
 }
 
 
-
-
-
-
-
-
-
-
-
-
+bool TGRSIViewer::HandleMenuClick(Long_t parm1, Long_t parm2){
+   printf("\t\t\tMenu action.\n");
+   switch(parm1) {
+      case M_FILE_EXIT:
+         printf("\t\t\t\tExit!\n");
+         CloseViewer();
+         break;
+      default:
+         break;
+   };
+   return true;
+}
 
 bool TGRSIViewer::HandleButtonClick(Long_t parm1, Long_t parm2) {
    printf("\t\t\t\tButton action.\n");
@@ -608,7 +611,7 @@ bool TGRSIViewer::HandleButtonClick(Long_t parm1, Long_t parm2) {
          printf("\t\t\t\tDraw!\n");
          MakeNewCanvas();
          break;
-      deafualt:
+      default:
          break;
    };
    return true;

@@ -48,6 +48,7 @@ class TGRSIViewer : public TGMainFrame {
 
       bool ProcessMessage(Long_t,Long_t,Long_t);
       bool HandleButtonClick(Long_t,Long_t);
+      bool HandleMenuClick(Long_t,Long_t);
 
       void LayoutMenuBar();
       void LayoutGUI();
@@ -110,7 +111,6 @@ class TGRSIViewer : public TGMainFrame {
       void HandleListTreeDoubleClicked(TGListTreeItem*,Int_t,Int_t,Int_t);     
       void HandleListTreeKeyPressed(TGListTreeItem*,ULong_t,ULong_t);
       void HandleListTreeReturnPressed(TGListTreeItem*);
-
    ClassDef(TGRSIViewer,0)
 };
 
