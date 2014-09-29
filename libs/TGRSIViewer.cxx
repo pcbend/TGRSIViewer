@@ -141,6 +141,12 @@ void TGRSIViewer::LayoutGUI()       {
    TGLayoutHints* statusBarLayout = new TGLayoutHints( kLHintsBottom|kLHintsLeft|kLHintsExpandX,0, 0, 2, 0 );
    fStatusBar = new TGStatusBar( this, 50, 10, kHorizontalFrame );
 
+
+
+  Int_t parts[] = { 26, 74 };
+     fStatusBar->SetParts(parts, 2);
+
+
    this->AddFrame(fStatusBar,statusBarLayout);
 }
 
@@ -783,11 +789,43 @@ void TGRSIViewer::GRSICanvasSelected(TPad *selpad, TObject *selected, Int_t even
    return;
 }
 
+   /*enum EEventType {
+    *kNoEvent       =  0,
+    *kButton1Down   =  1, kButton2Down   =  2, kButton3Down   =  3, kKeyDown  =  4,
+    *kButton1Up     = 11, kButton2Up     = 12, kButton3Up     = 13, kKeyUp    = 14,
+    *kButton1Motion = 21, kButton2Motion = 22, kButton3Motion = 23, kKeyPress = 24,
+    *kButton1Locate = 41, kButton2Locate = 42, kButton3Locate = 43,
+    *kMouseMotion   = 51, kMouseEnter    = 52, kMouseLeave    = 53,
+    *kButton1Double = 61, kButton2Double = 62, kButton3Double = 63
+    *
+    *enum EGEventType {
+    *kGKeyPress, kKeyRelease, kButtonPress, kButtonRelease,
+    *kMotionNotify, kEnterNotify, kLeaveNotify, kFocusIn, kFocusOut,
+    *kExpose, kConfigureNotify, kMapNotify, kUnmapNotify, kDestroyNotify,
+    *kClientMessage, kSelectionClear, kSelectionRequest, kSelectionNotify,
+    *kColormapNotify, kButtonDoubleClick, kOtherEvent*/
+
 
 void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *selected) {
 
-   if(selected)
-   printf("event %d x %d, y%d, selected %s\n", event,x,y, selected->Class()->GetName());
+ //  if(!selected)
+ //     return;
+
+
+   switch(event){
+      case kButton1Down:
+         printf("You clicked on something\n");
+         fStatusBar->SetText(Form("x = %d , y = %d ",x,y));
+   if(selected){
+      printf("You clicked on a %s\t 0x%p\n",selected->ClassName(),gPad);
+      if(strncmp(selected->ClassName(),"TH1",3)==0){
+         printf("You clicked on a histogram\n");
+       }
+   }
+       break;
+         
+   };
+
 
    return;
 }
