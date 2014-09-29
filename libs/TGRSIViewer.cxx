@@ -293,7 +293,7 @@ void TGRSIViewer::GRSICanvasClosed() {
       if(fGRSICanvasMap.size()>0)
          fCurrentCanvas = fGRSICanvasMap.rbegin()->second;
    }
-   printf("fCurrentCanvas: 0x%08x\n",fCurrentCanvas);
+   printf("fCurrentCanvas: 0x%p\n",fCurrentCanvas);
    return;
 }
 
@@ -654,7 +654,7 @@ void TGRSIViewer::HandleListTreeDoubleClicked(TGListTreeItem *entry,Int_t btn,In
                      Form("%s>0",object->GetName()),
                      Form("goff"));
                      TObject *newhist = gDirectory->FindObjectAny(Form("%s",object->GetName()));
-                     printf("FindObjectAny: 0x%08x\n",gDirectory->FindObjectAny(Form("%s",object->GetName())));
+                     printf("FindObjectAny: 0x%p\n",gDirectory->FindObjectAny(Form("%s",object->GetName())));
          ghm->InsertHist(newhist);
         }
       }
@@ -728,7 +728,7 @@ void TGRSIViewer::DrawHist(TGListTreeItem *entry) {
 
 
 void TGRSIViewer::HandleListTreeKeyPressed(TGListTreeItem *entry,ULong_t keysym,ULong_t mask) {
-   printf(DYELLOW "keysym = %i  |  mask = 0x%08x" RESET_COLOR "\n",keysym,mask);
+   printf(DYELLOW "keysym = %lu  |  mask = 0x%08lx" RESET_COLOR "\n",keysym,mask);
    switch(keysym) {
       case kKey_Return:
          fListTree->SetEventHandled(true);
