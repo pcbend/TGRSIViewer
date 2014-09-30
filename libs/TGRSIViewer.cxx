@@ -21,6 +21,8 @@
 #include <TGMenu.h>
 #include <TApplication.h>
 
+#include <TQObject.h>
+
 #include <KeySymbols.h>
 #include <GuiTypes.h>
 #include <WidgetMessageTypes.h>
@@ -37,6 +39,7 @@ TChain  *TGRSIViewer::fAnalysisChain = 0;
 
 TGRSIViewer::TGRSIViewer(const TGWindow *p,UInt_t w,UInt_t h) 
             :TGMainFrame(p?p:gClient->GetRoot(),w,h)  {
+   fCurrentPad = 0;
 
    SetCleanup(kDeepCleanup);
 
@@ -281,6 +284,9 @@ TCanvas *TGRSIViewer::MakeNewCanvas(const char* title) {
    canvas->Connect("Selected(TPad*,TObject*,Int_t)",
                    "TGRSIViewer",this,
                    "GRSICanvasSelected(TPad*,TObject*,Int_t)");
+   //canvas->Connect("Picked(TPad*,TObject*,Int_t)",
+   //                "TGRSIViewer",this,
+   //                "GRSICanvasSelected(TPad*,TObject*,Int_t)");
    canvas->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)",
                    "TGRSIViewer",this,
                    "GRSICanvasProcessEvent(Int_t,Int_t,Int_t,TObject*)");
@@ -304,8 +310,10 @@ void TGRSIViewer::GRSICanvasClosed() {
          cm_it++;
    }
    if(fCurrentCanvas==0) {
-      if(fGRSICanvasMap.size()>0)
+      fCurrentPad = 0;
+      if(fGRSICanvasMap.size()>0) {
          fCurrentCanvas = fGRSICanvasMap.rbegin()->second;
+      }
    }
    printf("fCurrentCanvas: 0x%p\n",fCurrentCanvas);
    return;
@@ -785,7 +793,8 @@ void TGRSIViewer::HandleListTreeReturnPressed(TGListTreeItem *entry) {
 
 
 void TGRSIViewer::GRSICanvasSelected(TPad *selpad, TObject *selected, Int_t event) {
-   printf("\t\tSWITCHING PAD!\t\t");
+   fCurrentPad = selpad;
+   printf("\t\tSelecting Pad = 0x%08x\t\t\n",fCurrentPad);
    return;
 }
 
@@ -810,46 +819,45 @@ void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *se
 
  //  if(!selected)
  //     return;
-   gPad->GetCanvas()->FeedbackMode(kTRUE);
+   //gPad->GetCanvas()->FeedbackMode(kTRUE);
+   //printf("gPad->GetListOfPrimitives() = 0x%08x\n",gPad->GetListOfPrimitives());
+
+   //if(selected)
+      //printf("selected->GetName() = %s\n",selected->GetName());
+
+   if(!selected)
+      return;
+
+   TCanvas *canvas = (TCanvas*)gTQSender;
+
+   //printf("canvas->GetName() = %s\n",canvas->GetName());
+
+   //printf("event = %i %i %i\n",event,x,y);
+
+   TH1 *hist1 = 0;
    switch(event){
-      case kButton1Down:
+      case kButton1Down: {
          fStatusBar->SetText(Form("x = %d , y = %d ",x,y));
-    //     printf("What you clicked on was a %d
-      if(selected){
-         TIter iter(gPad->GetListOfPrimitives());
-         TH1 *hist1 = 0;
+         //printf("What you clicked on was a %d
+            TIter iter(canvas->GetListOfPrimitives());
          TGRSIHistManager *ghm = 0;
          while(TObject *obj = iter.Next()){
             if(obj->InheritsFrom("TH1")){
                ghm = TGRSIHistManager::GetHistManagerFromHist((TH1*)obj);
                hist1 = ghm->FindHistByName(obj->GetName());
-               printf("The object address: %p\n",hist1);
+               //printf("The object address: %p\n",hist1);
             }
          }
          if (hist1){
-            printf("You are clicking on histogram: %s\n",hist1->GetName());
+            //printf("You are clicking on histogram: %s\n",hist1->GetName());
             Float_t ux = gPad->AbsPixeltoX(x);
             Float_t binx = gPad->PadtoX(ux);
             ghm->AddXMarker(hist1->GetName(),binx);
-    //  if(strncmp(selected->ClassName(),"TH1",3)==0){
-   /*      printf("You clicked on a histogram\n");
-         gPad->GetCanvas()->FeedbackMode(kTRUE);
-         int pyold = gPad->GetUniqueID();
-         printf("pyold %d\n",pyold);
-         int px = gPad->GetEventX();
-         int py = gPad->GetEventY();
-         float uxmin = gPad->GetUxmin();
-         float uxmax = gPad->GetUxmax();
-         int pxmin = gPad->XtoAbsPixel(uxmin);
-         int pxmax = gPad->XtoAbsPixel(uxmax);
-         if(pyold) gVirtualX->DrawLine(pxmin,pyold,pxmax,pyold);
-         gVirtualX->DrawLine(pxmin,py,pxmax,py);
-         gPad->SetUniqueID(py);
-         Float_t upy = gPad->AbsPixeltoY(py);
-         Float_t y = gPad->PadtoY(upy);
-       }*/
          }
-      }
+         }
+         break;
+      case kKeyPress:
+         HandleKeyPressInHist(hist1,x,y);
          break;
    };
 
@@ -858,5 +866,12 @@ void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *se
 }
 
 
+void TGRSIViewer::HandleKeyPressInHist(TH1 *hist,Int_t key,Int_t keysym) {
+   switch(keysym) {
+      case kKey_Down:
+         printf("down key pressed.\n");
+         break;
+   };
 
+} 
 

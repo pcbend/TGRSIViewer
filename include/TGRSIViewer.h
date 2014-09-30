@@ -76,6 +76,8 @@ class TGRSIViewer : public TGMainFrame {
       TGListTreeItem *fTreeItemOdb;
       TGListTreeItem *fTreeItemCuts;
 
+      TPad *fCurrentPad;
+
       static TCanvas *fCurrentCanvas;
       static TChain  *fFragmentChain;
       static TChain  *fAnalysisChain;
@@ -104,6 +106,9 @@ class TGRSIViewer : public TGMainFrame {
       void DrawHist(TGListTreeItem*);
 
       void CloseViewer(Option_t *opt ="");
+
+      void HandleKeyPressInHist(TH1*,Int_t,Int_t);
+
 
   public: //slots
       void CallCloseViewer();
