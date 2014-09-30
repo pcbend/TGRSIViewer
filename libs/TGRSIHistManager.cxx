@@ -5,9 +5,21 @@
 
 ClassImp(TGRSIHistManager)
 
-TGRSIHistManager::TGRSIHistManager() { }
+TGRSIHistManager::TGRSIHistManager(){ }
 
 TGRSIHistManager::~TGRSIHistManager() { }
+
+std::map<TH1*,TGRSIHistManager*> TGRSIHistManager::MasterHistManagerMap;
+
+TGRSIHistManager* TGRSIHistManager::GetHistManagerFromHist(TH1* hist){
+   TGRSIHistManager* ghm = 0;
+   if(MasterHistManagerMap.count(hist) == 1) {
+      ghm = MasterHistManagerMap.at(hist);
+   }
+
+   return ghm;
+}
+
 
 
 void TGRSIHistManager::InsertHist(TObject *obj,Option_t *opt) {
@@ -29,6 +41,8 @@ void TGRSIHistManager::InsertHist(TObject *obj,Option_t *opt) {
       info->dimension = 3;
    else if(hist->InheritsFrom("TH2"))
       info->dimension = 2;
+   
+   MasterHistManagerMap.insert(std::make_pair(hist,this));
 
    fGRSIHistMap.insert(std::make_pair(info,hist));
    return;
@@ -132,6 +146,30 @@ TH1 *TGRSIHistManager::FindHistByTitle(const char *cc_title) {
      }
    }
    return (TH1*)found;
+}
+
+void TGRSIHistManager::AddXMarker(const char* name, Int_t bin){
+   TH1 *hist = FindHistByName(name);
+   if(!hist){ return;}
+
+   GRSIHistInfo *info = FindHistInfoByName(name);
+   printf("info = %p\n",info);
+   if(info->xmarkers.size() == 6){
+      UndrawXMarker(info->xmarkers.front(),hist);
+      info->xmarkers.pop_front();
+   }
+
+   info->xmarkers.push_back(bin);
+   DrawXMarker(bin,hist);
+}
+
+void TGRSIHistManager::UndrawXMarker(Int_t bin, TH1* hist){
+    printf("Removing the marker at bin %d\n",bin);
+}
+
+void TGRSIHistManager::DrawXMarker(Int_t bin, TH1* hist){
+    printf("Drawing a line on bin %d\n",bin);
+
 }
 
 

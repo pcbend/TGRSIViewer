@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include <map>
-
+#include <deque>
 
 
 #include <TObject.h>
@@ -24,7 +24,7 @@ class GRSIHistInfo {
       std::string title;
       std::vector<TCut> cuts;
       int dimension;
-   
+      std::deque<Int_t> xmarkers;  
 };
 
 
@@ -43,6 +43,8 @@ class TGRSIHistManager : public TObject {
       void RemoveHist(TObject*,Option_t *opt="");
       void RemoveAll(Option_t *opt);
 
+      void AddXMarker(const char* name, Int_t bin);
+
       int Size() { return fGRSIHistMap.size(); }
 
    private:
@@ -51,8 +53,18 @@ class TGRSIHistManager : public TObject {
 
       void ReplaceHist(GRSIHistInfo*,TObject*);
 
+      void DrawXMarker(Int_t bin, TH1* hist);
+      void UndrawXMarker(Int_t bin, TH1* hist);
+
+
       GRSIHistInfo *FindHistInfoByName(const char*);
-      GRSIHistInfo *FindHistInfoByTitle(const char*);
+      GRSIHistInfo *FindHistInfoByTitle(const char*);      
+
+   private:
+      static std::map<TH1*,TGRSIHistManager*> MasterHistManagerMap;
+
+   public:
+      static TGRSIHistManager* GetHistManagerFromHist(TH1* hist);
 
    ClassDef(TGRSIHistManager,0)
 };

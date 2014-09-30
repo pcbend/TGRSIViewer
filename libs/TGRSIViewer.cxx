@@ -40,7 +40,7 @@ TGRSIViewer::TGRSIViewer(const TGWindow *p,UInt_t w,UInt_t h)
 
    SetCleanup(kDeepCleanup);
 
-   SetWindowName("Peter's Shoeshine Emporium");              
+   SetWindowName("TGRSIViewer");              
 
    this->Connect("CloseWindow()","TGRSIViewer",this,"CallCloseViewer()");
    LayoutMenuBar();
@@ -785,7 +785,7 @@ void TGRSIViewer::HandleListTreeReturnPressed(TGListTreeItem *entry) {
 
 
 void TGRSIViewer::GRSICanvasSelected(TPad *selpad, TObject *selected, Int_t event) {
-
+   printf("\t\tSWITCHING PAD!\t\t");
    return;
 }
 
@@ -810,20 +810,47 @@ void TGRSIViewer::GRSICanvasProcessEvent(Int_t event,Int_t x,Int_t y,TObject *se
 
  //  if(!selected)
  //     return;
-
-
+   gPad->GetCanvas()->FeedbackMode(kTRUE);
    switch(event){
       case kButton1Down:
-         printf("You clicked on something\n");
          fStatusBar->SetText(Form("x = %d , y = %d ",x,y));
-   if(selected){
-      printf("You clicked on a %s\t 0x%p\n",selected->ClassName(),gPad);
-      if(strncmp(selected->ClassName(),"TH1",3)==0){
-         printf("You clicked on a histogram\n");
-       }
-   }
-       break;
-         
+    //     printf("What you clicked on was a %d
+      if(selected){
+         TIter iter(gPad->GetListOfPrimitives());
+         TH1 *hist1 = 0;
+         TGRSIHistManager *ghm = 0;
+         while(TObject *obj = iter.Next()){
+            if(obj->InheritsFrom("TH1")){
+               ghm = TGRSIHistManager::GetHistManagerFromHist((TH1*)obj);
+               hist1 = ghm->FindHistByName(obj->GetName());
+               printf("The object address: %p\n",hist1);
+            }
+         }
+         if (hist1){
+            printf("You are clicking on histogram: %s\n",hist1->GetName());
+            Float_t ux = gPad->AbsPixeltoX(x);
+            Float_t binx = gPad->PadtoX(ux);
+            ghm->AddXMarker(hist1->GetName(),binx);
+    //  if(strncmp(selected->ClassName(),"TH1",3)==0){
+   /*      printf("You clicked on a histogram\n");
+         gPad->GetCanvas()->FeedbackMode(kTRUE);
+         int pyold = gPad->GetUniqueID();
+         printf("pyold %d\n",pyold);
+         int px = gPad->GetEventX();
+         int py = gPad->GetEventY();
+         float uxmin = gPad->GetUxmin();
+         float uxmax = gPad->GetUxmax();
+         int pxmin = gPad->XtoAbsPixel(uxmin);
+         int pxmax = gPad->XtoAbsPixel(uxmax);
+         if(pyold) gVirtualX->DrawLine(pxmin,pyold,pxmax,pyold);
+         gVirtualX->DrawLine(pxmin,py,pxmax,py);
+         gPad->SetUniqueID(py);
+         Float_t upy = gPad->AbsPixeltoY(py);
+         Float_t y = gPad->PadtoY(upy);
+       }*/
+         }
+      }
+         break;
    };
 
 
